@@ -11,17 +11,21 @@ Run 	python3 -m fgic.hi_classifier.hi_leeds_butterfly.py
 '''
 
 # import libraries
+import matplotlib.pyplot as plt
+import numpy as np
+import os
 import keras
-from keras.models import Sequential,Input,Model
-from keras.layers import Dense, Dropout, Flatten
+from keras.models import Sequential, Input, Model
+from keras.layers import Dense, Dropout, Flatten, Activation
 from keras.layers import Conv2D, MaxPooling2D
+from keras.initializers import he_normal
+from keras import optimizers
+from keras.callbacks import LearningRateScheduler, TensorBoard
 from keras.layers.normalization import BatchNormalization
 from keras.layers.advanced_activations import LeakyReLU
 from keras.models import model_from_json
 from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
-import numpy as np
-import os
+
 
 # import package functions
 from ..img_util.segment import segment
@@ -31,13 +35,27 @@ from ..img_util.segment import segment
 ########################################################
 # ==================== Data Files  ====================
 '''
+data_dir = '../data/leedsbutterfly'
 
+'''
+########################################################
+# ============= Learning Rate Scheduler  ===============
+'''
+def scheduler(epoch):
+	learning_rate_init = 0.001
+	if epoch > 55:
+		learning_rate_init = 0.0002
+	if epoch > 70:
+		learning_rate_init = 0.00005
+	return learning_rate_init
 
 
 '''
 #########################################################
 # ==================== Prepare Data  ====================
-''' 
+'''
+input_shape = (None, None, 3)
+
 
 
 '''

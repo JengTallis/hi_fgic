@@ -37,11 +37,13 @@ hi_fgic
 - [Leeds Butterfly](http://www.josiahwang.com/dataset/leedsbutterfly/)
 Manually constructed Hierarchy (based on species)
 ```
-Super Class (Family)
+Layer 1: 2 Family
+
 0:Nymphalidae
 1:NonNymphalidae
 
-8 Super Class (Genus)
+Layer 2: 8 Genus
+
 0: Danaus
 1: Heliconius	
 2: Junonia
@@ -51,7 +53,8 @@ Super Class (Family)
 6: Pieris	
 7: Vanessa
 
-10 FG classes (Species)
+Layer 3: 10 Species (FG classes)
+
 001: Danaus plexippus
 002: Heliconius charitonius	
 003: Heliconius erato	
@@ -62,36 +65,9 @@ Super Class (Family)
 008: Pieris rapae	
 009: Vanessa atalanta	
 010: Vanessa cardui
+
 ```
 
-```graphviz
-digraph hierarchy {
-nodesep=0.25      
-node [color=Red,fontname=Courier,shape=box]
-edge [color=Blue, style=dashed]
-
-// layer 1
-Root->{Nymphalidae NonNymphalidae}
-
-// layer 2
-Nymphalidae->{D H J V}
-NonNymphalidae->{L N Pa Pi}
-
-// layer 3
-D->{DP}
-H->{HC HE}	
-J->{JC}
-L->{LP}
-N->{NA}	
-Pa->{PaC}	
-Pi->{PiR}	
-V->{VA VC}
-
-{rank=same;Nymphalidae NonNymphalidae}
-
-
-}
-```
 
 ##### Medium scale
 - [Stanford Dog](http://vision.stanford.edu/aditya86/ImageNetDogs/)
