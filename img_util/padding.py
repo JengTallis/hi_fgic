@@ -3,7 +3,6 @@
 padding.py
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 '''
-
 import sys
 import os
 import numpy as np
@@ -16,7 +15,6 @@ Set relative path to absolute
 here = lambda x: os.path.abspath(os.path.join(os.path.dirname(__file__), x))
 pathjoin = os.path.join
 
-
 img_dir = '../data/leedsbutterfly/segmented'
 out_dir = '../data/leedsbutterfly/padded'
 seg_dir = '../data/leedsbutterfly/segmentations'
@@ -24,7 +22,6 @@ seg_dir = '../data/leedsbutterfly/segmentations'
 IMG_DIR = here(img_dir)
 OUT_DIR = here(out_dir)
 SEG_DIR = here(seg_dir)
-
 
 ''' 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -63,7 +60,6 @@ def pad(img_path, h, w):
 
 	return pad_out
 
-
 ''' 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Find the max height and width amont images in the directory
@@ -92,7 +88,6 @@ def pad_size(img_dir):
 				w_name = img_name
 	return max_h, max_w, h_name, w_name
 
-
 ''' 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Pad each image file in img_dir 
@@ -113,7 +108,6 @@ def pad_files(img_dir, out_dir, h, w):
 			cv2.imwrite(pathjoin(out_dir, filename) ,pad_out)
 			print(pathjoin(out_dir, filename))
 	return None
-
 
 #img_path = IMG_DIR + '/0010002_s.png'
 h, w, h_name, w_name = pad_size(SEG_DIR)

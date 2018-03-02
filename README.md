@@ -9,6 +9,7 @@ hi_fgic
 ├── img_util
 │   ├── __init__.py
 │   ├── segment.py
+│   ├── padding.py
 │   └── bounding_box.py
 ├── baseline_classifier
 │   ├── __init__.py

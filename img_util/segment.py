@@ -3,12 +3,10 @@
 segment.py
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 '''
-
 import sys
 import os
 import numpy as np
 import cv2
-
 
 ''' 
 Set relative path to absolute
@@ -16,14 +14,12 @@ Set relative path to absolute
 here = lambda x: os.path.abspath(os.path.join(os.path.dirname(__file__), x))
 pathjoin = os.path.join
 
-
 img_dir = '../data/leedsbutterfly/images'
 seg_dir = '../data/leedsbutterfly/segmentations'
 out_dir = '../data/leedsbutterfly/segmented'
 IMG_DIR = here(img_dir)
 SEG_DIR = here(seg_dir)
 OUT_DIR = here(out_dir)
-
 
 ''' 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -73,9 +69,7 @@ def segment_files(img_dir, seg_dir, out_dir):
 			print(pathjoin(out_dir, filename))
 	return None
 
-
 #img_path = './images/0010001.png'
 #seg_path = './segmentations/0010001_seg0.png'
 
 segment_files(IMG_DIR, SEG_DIR, OUT_DIR)
-

@@ -1,11 +1,10 @@
-
 ''' 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 hi_leeds_butterfly.py
 
 Usage: 
 Under 	parent of hi_fgic
-Run 	python3 -m fgic.hi_classifier.hi_leeds_butterfly.py
+Run 	python3 -m hi_fgic.hi_classifier.hi_leeds_butterfly.py
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 '''
@@ -14,6 +13,7 @@ Run 	python3 -m fgic.hi_classifier.hi_leeds_butterfly.py
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import cv2
 import keras
 from keras.models import Sequential, Input, Model
 from keras.layers import Dense, Dropout, Flatten, Activation
@@ -24,18 +24,8 @@ from keras.callbacks import LearningRateScheduler, TensorBoard
 from keras.layers.normalization import BatchNormalization
 from keras.layers.advanced_activations import LeakyReLU
 from keras.models import model_from_json
+from keras import backend as be
 from sklearn.model_selection import train_test_split
-
-
-# import package functions
-from ..img_util.segment import segment
-
-
-'''
-########################################################
-# ==================== Data Files  ====================
-'''
-data_dir = '../data/leedsbutterfly'
 
 '''
 ########################################################
@@ -51,12 +41,95 @@ def scheduler(epoch):
 
 
 '''
-#########################################################
-# ==================== Prepare Data  ====================
+########################################################
+# ============= Loss Weight Modifier ===============
 '''
-input_shape = (None, None, 3)
+class LossWeightsModifier(keras.callbacks.Callback):
+  def __init__(self, alpha, beta, gamma):
+    self.alpha = alpha
+    self.beta = beta
+    self.gamma = gamma
+  def on_epoch_end(self, epoch, logs={}):
+    if epoch == 8:
+      be.set_value(self.alpha, 0.1)
+      be.set_value(self.beta, 0.8)
+      be.set_value(self.gamma, 0.1)
+    if epoch == 18:
+      be.set_value(self.alpha, 0.1)
+      be.set_value(self.beta, 0.2)
+      be.set_value(self.gamma, 0.7)
+    if epoch == 28:
+      be.set_value(self.alpha, 0)
+      be.set_value(self.beta, 0)
+      be.set_value(self.gamma, 1)
+
+'''
+########################################################
+# ================== Data Directory  ===================
+''' 
+# Set relative path to absolute
+here = lambda x: os.path.abspath(os.path.join(os.path.dirname(__file__), x))
+pathjoin = os.path.join
+
+# Image Directory
+data_dir = '../data/leedsbutterfly'
+img_dir = data_dir + '/padded'
+IMG_DIR = here(img_dir)
+
+# Output File Path
+log_dir = '../tb_log/'
+weight_dir = '../hi_weights/'
+model_dir = '../hi_models/'
+train_id = '1'
+model_name = 'model_hi_leedsbutterfly_' + train_id + '.json'
+weight_name = 'weights_hi_leedsbutterfly_' + train_id + '.h5'
+model_file = os.path.join(model_dir, model_name)
+weight_file = os.path.join(weight_dir, weight_name)
+
+LOG_DIR = here(log_dir)
+WEIGHT_fILE = here(weight_file)
+MODEL_FILE = here(model_file)
 
 
+
+
+# === Input/Output data ===
+def data(img_dir, test_size):
+	a = []
+	b = []
+	for img in os.listdir(img_dir):
+		img_name = os.fsdecode(img)
+		str_class = img_name[:-10]
+		int_class = int(str_class) - 1
+		if img_name.endswith(".png"):
+			im = cv2.imread(img_dir + '/' + img_name, -1)
+			if im is None:
+				print ('Error opening image!')
+				return -1
+			a.append(im)
+			b.append(int_class)
+
+	X = np.array(a)
+	Y = np.array(b)
+
+	Y = keras.utils.to_categorical(Y)
+	X = X.astype('float32')
+	X = (X - np.mean(X)) / np.std(X)
+
+	X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=test_size, random_state=42)
+
+	return X_train, X_test, Y_train, Y_test
+
+
+
+'''
+#########################################################
+# ================= Model Parameters  ===================
+'''
+batch_size	= 128
+epochs		= 60
+
+test_size	= 0.3
 
 '''
 #################################################################
@@ -96,61 +169,166 @@ def load_model(jsonfile, hdf5file, X, Y):
 ########################################################
 # ==================== CNN Trainer  ====================
 '''
-def trainer(batch_size, epochs):
+def trainer(batch_size, epochs, test_size, IMG_DIR, LOG_DIR, MODEL_FILE, WEIGHT_fILE):
 
 	# ==================== Data  ====================
 
+	# ==================== data definition =====================
+	h = 2328
+	w = 3480
+	input_shape = (h, w, 3)
+
+	# === coarse 1 classes ===
+	n_c1 = 2
+	# === coarse 2 classes ===
+	n_c2 = 8
+	# === fine-grained classes ===
+	n_fg = 10
 
 	# Training data: Input (X) and Expected Output (Y)
-	train_X, valid_X, test_X, train_Y, valid_Y, test_Y = ???
+	X_train, X_test, Y_train, Y_test =  data(IMG_DIR, test_size)
+	print("Shape of X_train")
+	print(X_train.shape)
 
-	train_X = train_X.reshape(-1, sensor_h, sensor_w, 1)
-	valid_X = valid_X.reshape(-1, sensor_h, sensor_w, 1)
-	test_X = test_X.reshape(-1, sensor_h, sensor_w, 1)
+	# ============== coarse 2 labels ===============
+	fg_parent = {
+		0:0,
+		1:1, 2:1,
+		3:2,
+		4:3,
+		5:4,
+		6:5,
+		7:6,
+		8:7, 9:7
+	}
 
-	train_X = train_X.astype('float32')
-	valid_X = valid_X.astype('float32')
-	test_X = test_X.astype('float32')
-	
-	train_X = train_X / 255
-	valid_X = valid_X / 255
-	test_X = test_X / 255
+	Y_c2_train = np.zeros((Y_train.shape[0], n_c2)).astype("float32")
+	for i in range(Y_c2_train.shape[0]):
+		Y_c2_train[i][fg_parent[np.argmax(Y_train[i])]] = 1.0
 
-	# ==================== Create CNN Model  ====================
+	Y_c2_test = np.zeros((Y_test.shape[0], n_c2)).astype("float32")
+	for i in range(Y_c2_test.shape[0]):
+		Y_c2_test[i][fg_parent[np.argmax(Y_test[i])]] = 1.0
+
+	# ============== coarse 1 labels ===============
+	c2_parent = {
+		0:0, 1:0, 2:0,
+		3:1, 4:1, 5:1, 6:1,
+		7:0
+	}
+
+	Y_c1_train = np.zeros((Y_c2_train.shape[0], n_c1)).astype("float32")
+	for i in range(Y_c1_train.shape[0]):
+		Y_c1_train[i][c2_parent[np.argmax(Y_c2_train[i])]] = 1.0
+
+	Y_c1_test = np.zeros((Y_c2_test.shape[0], n_c1)).astype("float32")
+	for i in range(Y_c1_test.shape[0]):
+		Y_c1_test[i][c2_parent[np.argmax(Y_c2_test[i])]] = 1.0
+
+
+	# ==================== Create B-CNN Model  ====================
 	batch_size = batch_size
 	epochs = epochs
 	print("Building B-CNN Model")
 
-	model = Sequential()
-	model.add(Conv2D(32, kernel_size=(3, 3),activation='linear',input_shape=(sensor_h,sensor_w,1),padding='same'))
-	model.add(LeakyReLU(alpha=0.1))
-	model.add(MaxPooling2D((2, 2),padding='same'))
-	model.add(Conv2D(64, (3, 3), activation='linear',padding='same'))
-	model.add(LeakyReLU(alpha=0.1))
-	model.add(MaxPooling2D(pool_size=(2, 2),padding='same'))
-	model.add(Conv2D(128, (3, 3), activation='linear',padding='same'))
-	model.add(LeakyReLU(alpha=0.1))                
-	model.add(MaxPooling2D(pool_size=(2, 2),padding='same'))
-	model.add(Flatten())
-	model.add(Dense(128, activation='linear'))
-	model.add(LeakyReLU(alpha=0.1))                  
-	model.add(Dense(case_size, activation='softmax'))
-	model.add(Dense(case_size, activation='sigmoid'))
+	input_imgs = Input(shape=input_shape, name='input')
 
-	# Compile model
-	model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+	alpha = be.variable(value=0.98, dtype="float32", name="alpha") # A1 in paper
+	beta  = be.variable(value=0.01, dtype="float32", name="beta") # A2 in paper
+	gamma = be.variable(value=0.01, dtype="float32", name="gamma") # A3 in paper
+
+	# ==================== Block 1  ====================
+	x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1')(input_imgs)
+	x = BatchNormalization()(x)
+	x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv2')(x)
+	x = BatchNormalization()(x)
+	x = MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(x)
+
+	# ==================== Block 2  ====================
+	x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv1')(x)
+	x = BatchNormalization()(x)
+	x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv2')(x)
+	x = BatchNormalization()(x)
+	x = MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')(x)
+
+	# ==================== Coarse 1 Branch  ====================
+	c1_bch = Flatten(name='c1_flatten')(x)
+	c1_bch = Dense(256, activation='relu', name='c1_fc_leedsbutterfly_1')(c1_bch)
+	c1_bch = BatchNormalization()(c1_bch)
+	c1_bch = Dropout(0.5)(c1_bch)
+	c1_bch = Dense(256, activation='relu', name='c1_fc2')(c1_bch)
+	c1_bch = BatchNormalization()(c1_bch)
+	c1_bch = Dropout(0.5)(c1_bch)
+	c1_pred = Dense(n_c1, activation='softmax', name='c1_pred_leedsbutterfly')(c1_bch)
+
+	# ==================== Block 3  ====================
+	x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv1')(x)
+	x = BatchNormalization()(x)
+	x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv2')(x)
+	x = BatchNormalization()(x)
+	x = MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool')(x)
+
+	# ==================== Coarse 2 Branch  ====================
+	c2_bch = Flatten(name='c2_flatten')(x)
+	c2_bch = Dense(512, activation='relu', name='c2_fc_leedsbutterfly_1')(c2_bch)
+	c2_bch = BatchNormalization()(c2_bch)
+	c2_bch = Dropout(0.5)(c2_bch)
+	c2_bch = Dense(512, activation='relu', name='c2_fc2')(c2_bch)
+	c2_bch = BatchNormalization()(c2_bch)
+	c2_bch = Dropout(0.5)(c2_bch)
+	c2_pred = Dense(n_c2, activation='softmax', name='c2_pred_leedsbutterfly')(c2_bch)
+
+	# ==================== Block 4  ====================
+	x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv1')(x)
+	x = BatchNormalization()(x)
+	x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv2')(x)
+	x = BatchNormalization()(x)
+	x = MaxPooling2D((2, 2), strides=(2, 2), name='block4_pool')(x)
+
+	# ==================== Fine-Grained Block  ====================
+	x = Flatten(name='flatten')(x)
+	x = Dense(1024, activation='relu', name='fc_leedsbutterfly_1')(x)
+	x = BatchNormalization()(x)
+	x = Dropout(0.5)(x)
+	x = Dense(1024, activation='relu', name='fc2')(x)
+	x = BatchNormalization()(x)
+	x = Dropout(0.5)(x)
+	fg_pred = Dense(n_fg, activation='softmax', name='pred_leedsbutterfly')(x)
+
+	model = Model(input=input_imgs, output=[c1_pred, c2_pred, fg_pred], name='hi_leeds_butterfly')
+
+	# ==================== Compile Model  ====================
+	sgd = optimizers.SGD(lr=0.003, momentum=0.9, nesterov=True)
+	model.compile(	loss='categorical_crossentropy', 
+					optimizer=sgd, 
+					loss_weights=[alpha, beta, gamma],
+					# optimizer=keras.optimizers.Adadelta(),
+					metrics=['accuracy'])
+
+	tb_cb = TensorBoard(log_dir=LOG_DIR, histogram_freq=0)
+	change_lr = LearningRateScheduler(scheduler)
+	change_lw = LossWeightsModifier(alpha, beta, gamma)
+	cbks = [change_lr, tb_cb, change_lw]
+
 	model.summary()
 
 	# ==================== Train CNN Model  ====================
 
 	# Fit the model
 	print("Start Training")
-	train = model.fit(train_X, train_Y, batch_size=batch_size,epochs=epochs,verbose=1,validation_data=(valid_X, valid_Y))
+
+	model.fit(	X_train, [Y_c1_train, Y_c2_train, Y_train],
+				batch_size=batch_size,
+				epochs=epochs,
+				verbose=1,
+				callbacks=cbks,
+				validation_data=(X_test, [Y_c1_test, Y_c2_test, Y_test]))
+
 	print("Finish Training")
 
 	# evaluate the model
 	print("Evaluation Result:")
-	scores = model.evaluate(test_X, test_Y, verbose=0)
+	scores = model.evaluate(X_test, Y_test, verbose=0)
 	print('Test loss:', scores[0])
 	print('Test accuracy:', scores[1])
 	print("\n%s: %.5f%%" % (model.metrics_names[1], scores[1]*100))
@@ -174,8 +352,8 @@ def trainer(batch_size, epochs):
 
 	# ==================== Save CNN Model  ====================
 
-	jsonfile = 'aavia_algo/trained_model/pc.json'
-	hdf5file = 'aavia_algo/trained_model/pc.h5'
+	jsonfile = MODEL_fILE
+	hdf5file = WEIGHT_fILE
 
 	# serialize model to JSON
 	model_json = model.to_json()
@@ -188,8 +366,5 @@ def trainer(batch_size, epochs):
 	print('===============================\n')
 
 
-########## fix random seed for reproducibility #########
-np.random.seed(26)
-
 ########## trainer trains model #########
-trainer(batch_size, epochs, case_h, case_w, sensor_h, sensor_w, files, bs, cs)
+trainer(batch_size, epochs, test_size, IMG_DIR, LOG_DIR, MODEL_FILE, WEIGHT_fILE)
