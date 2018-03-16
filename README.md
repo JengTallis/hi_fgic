@@ -10,19 +10,19 @@ hi_fgic
 │   ├── __init__.py
 │   ├── segment.py
 │   ├── padding.py
-│   └── bounding_box.py
+│   └── scale_pad.py
 ├── baseline_classifier
 │   ├── __init__.py
 │   ├── b_leeds_butterfly.py
 │   ├── b_stanford_dogs.py
 │   ├── b_cub_200.py
-│   └── b_fgvc_aircraft.py
+│   └── b_fashion.py
 └── hi_classifier
 	├── __init__.py
     ├── hi_leeds_butterfly.py
     ├── hi_stanford_dogs.py
     ├── hi_cub_200.py
-    └── hi_fgvc_aircraft.py
+    └── hi_fashion.py
 ```
 
 ## Fine Grained Image Classification
@@ -32,6 +32,7 @@ hi_fgic
 #### Non FG Hierarchical
 - [CIFAR-100](https://www.cs.toronto.edu/~kriz/cifar.html)
 - [CIFAR intro](http://corochann.com/cifar-10-cifar-100-dataset-introduction-1258.html)
+- [FASHION-MNIST](https://github.com/zalandoresearch/fashion-mnist)
 
 #### FG Non-hierarchical
 ##### Small Scale

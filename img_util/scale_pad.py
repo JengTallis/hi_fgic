@@ -16,7 +16,7 @@ here = lambda x: os.path.abspath(os.path.join(os.path.dirname(__file__), x))
 pathjoin = os.path.join
 
 img_dir = '../data/leedsbutterfly/segmented'
-out_dir = '../data/leedsbutterfly/scale_pad'
+out_dir = '../data/leedsbutterfly/scale_pad_256'
 
 IMG_DIR = here(img_dir)
 OUT_DIR = here(out_dir)
@@ -78,7 +78,7 @@ def scale_pad_files(img_dir, out_dir, size):
 			print(pathjoin(out_dir, filename))
 	return None
 
-size = 128
+size = 256
 #img_path = IMG_DIR + '/0010002_s.png'
 #scale_pad(img_path, size)
 scale_pad_files(IMG_DIR, OUT_DIR, size)
