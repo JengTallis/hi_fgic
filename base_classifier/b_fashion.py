@@ -65,30 +65,6 @@ def scheduler(epoch):
 		learning_rate_init = 0.00005
 	return learning_rate_init
 
-
-'''
-########################################################
-# ============= Loss Weight Modifier ===============
-'''
-class LossWeightsModifier(keras.callbacks.Callback):
-  def __init__(self, alpha, beta, gamma):
-    self.alpha = alpha
-    self.beta = beta
-    self.gamma = gamma
-  def on_epoch_end(self, epoch, logs={}):
-    if epoch == 8:
-      be.set_value(self.alpha, 0.1)
-      be.set_value(self.beta, 0.8)
-      be.set_value(self.gamma, 0.1)
-    if epoch == 18:
-      be.set_value(self.alpha, 0.1)
-      be.set_value(self.beta, 0.2)
-      be.set_value(self.gamma, 0.7)
-    if epoch == 28:
-      be.set_value(self.alpha, 0)
-      be.set_value(self.beta, 0)
-      be.set_value(self.gamma, 1)
-
 '''
 ########################################################
 # ================== Data Directory  ===================
@@ -171,6 +147,9 @@ def trainer(batch_size, epochs, test_size, DATA_DIR, LOG_DIR, MODEL_FILE, WEIGHT
 	channel = 3
 	input_shape = (size, size, channel)
 
+	# === fine-grained classes ===
+	n_fg = 10
+
 	# Training data: Input (X) and Expected Output (Y)
 	X_train, Y_train = load_mnist(DATA_DIR, kind='train')
 	X_train = X_train.astype('float32')
@@ -237,22 +216,19 @@ def trainer(batch_size, epochs, test_size, DATA_DIR, LOG_DIR, MODEL_FILE, WEIGHT
 	x = Dense(1024, activation='relu', name='fc2')(x)
 	x = BatchNormalization()(x)
 	x = Dropout(0.5)(x)
-	fg_pred = Dense(n_fg, activation='softmax', name='pred_fashion')(x)
+	fine_pred = Dense(n_fg, activation='softmax', name='pred_fashion')(x)
 
 	model = Model(input_imgs, fine_pred, name='b_fashion')
 
 	# ==================== Compile Model  ====================
 	sgd = optimizers.SGD(lr=0.003, momentum=0.9, nesterov=True)
 	model.compile(	loss='categorical_crossentropy', 
-					optimizer=sgd, 
-					loss_weights=[alpha, beta, gamma],
+					optimizer=sgd,
 					# optimizer=keras.optimizers.Adadelta(),
 					metrics=['accuracy'])
 
 	tb_cb = TensorBoard(log_dir=LOG_DIR, histogram_freq=0)
 	change_lr = LearningRateScheduler(scheduler)
-	#change_lw = LossWeightsModifier(alpha, beta, gamma)
-	#cbks = [change_lr, tb_cb, change_lw]
 	cbks = [change_lr,tb_cb]
 	
 	model.summary()
@@ -262,12 +238,12 @@ def trainer(batch_size, epochs, test_size, DATA_DIR, LOG_DIR, MODEL_FILE, WEIGHT
 	# Fit the model
 	print("Start Training")
 
-	model.fit(	X_train, [Y_c1_train, Y_c2_train, Y_train],
+	train = model.fit(	X_train, Y_train,
 				batch_size=batch_size,
 				epochs=epochs,
 				verbose=1,
 				callbacks=cbks,
-				validation_data=(X_test, [Y_c1_test, Y_c2_test, Y_test]))
+				validation_data=(X_test, Y_test))
 
 	print("Finish Training")
 

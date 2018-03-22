@@ -318,7 +318,7 @@ def trainer(batch_size, epochs, test_size, IMG_DIR, LOG_DIR, MODEL_FILE, WEIGHT_
 	# Fit the model
 	print("Start Training")
 
-	model.fit(	X_train, [Y_c1_train, Y_c2_train, Y_train],
+	train = model.fit(	X_train, [Y_c1_train, Y_c2_train, Y_train],
 				batch_size=batch_size,
 				epochs=epochs,
 				verbose=1,

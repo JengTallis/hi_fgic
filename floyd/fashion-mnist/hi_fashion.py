@@ -1,10 +1,11 @@
 ''' 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 hi_fashion.py
-
-Usage: 
-Under 	parent of hi_fgic
-Run 	python3 -m hi_fgic.hi_classifier.hi_fashion.py
+ 
+Run:
+floyd run \
+--data jengtallis/datasets/fashion/1:/data \
+"python hi_fashion.py"
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 '''
@@ -94,26 +95,20 @@ class LossWeightsModifier(keras.callbacks.Callback):
 # ================== Data Directory  ===================
 ''' 
 # Set relative path to absolute
-here = lambda x: os.path.abspath(os.path.join(os.path.dirname(__file__), x))
 pathjoin = os.path.join
 
 # Data Directory
-data_dir = '../data/fashion'
-DATA_DIR = here(data_dir)
+DATA_DIR = '/data'
 
 # Output File Path
-log_dir = '../tb_log/'
-weight_dir = '../hi_weights/'
-model_dir = '../hi_models/'
+LOG_DIR = '/output/tb_log/'
+WEIGHT_DIR = '/output/hi_weights/'
+model_dir = '/output/hi_models/'
 train_id = '1'
 model_name = 'model_hi_fashion_' + train_id + '.json'
 weight_name = 'weights_hi_fashion_' + train_id + '.h5'
-model_file = os.path.join(model_dir, model_name)
-weight_file = os.path.join(weight_dir, weight_name)
-
-LOG_DIR = here(log_dir)
-WEIGHT_fILE = here(weight_file)
-MODEL_FILE = here(model_file)
+MODEL_FILE = pathjoin(model_dir, model_name)
+WEIGHT_FILE = pathjoin(WEIGHT_DIR, weight_name)
 
 
 '''
@@ -163,7 +158,7 @@ def load_model(jsonfile, hdf5file, X, Y):
 ########################################################
 # ==================== CNN Trainer  ====================
 '''
-def trainer(batch_size, epochs, test_size, DATA_DIR, LOG_DIR, MODEL_FILE, WEIGHT_fILE):
+def trainer(batch_size, epochs, test_size, DATA_DIR, LOG_DIR, MODEL_FILE, WEIGHT_FILE):
 
 	# ==================== Data  ====================
 
@@ -361,8 +356,8 @@ def trainer(batch_size, epochs, test_size, DATA_DIR, LOG_DIR, MODEL_FILE, WEIGHT
 
 	# ==================== Save CNN Model  ====================
 
-	jsonfile = MODEL_fILE
-	hdf5file = WEIGHT_fILE
+	jsonfile = MODEL_FILE
+	hdf5file = WEIGHT_FILE
 
 	# serialize model to JSON
 	model_json = model.to_json()
@@ -376,4 +371,4 @@ def trainer(batch_size, epochs, test_size, DATA_DIR, LOG_DIR, MODEL_FILE, WEIGHT
 
 
 ########## trainer trains model #########
-trainer(batch_size, epochs, test_size, DATA_DIR, LOG_DIR, MODEL_FILE, WEIGHT_fILE)
+trainer(batch_size, epochs, test_size, DATA_DIR, LOG_DIR, MODEL_FILE, WEIGHT_FILE)
