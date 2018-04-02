@@ -16,7 +16,7 @@ here = lambda x: os.path.abspath(os.path.join(os.path.dirname(__file__), x))
 pathjoin = os.path.join
 
 img_dir = '../data/leedsbutterfly/segmented'
-out_dir = '../data/leedsbutterfly/scale_pad_256'
+out_dir = '../data/leedsbutterfly/scale-leeds-butterfly-180'
 
 IMG_DIR = here(img_dir)
 OUT_DIR = here(out_dir)
@@ -56,6 +56,29 @@ def scale_pad(img_path, size):
 
 	return scale_pad_out
 
+''' 
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Scale the image to a desired squre size without preserving ratio
+
+Input: image_path, size
+Output: scaled_image
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+'''
+def scale(img_path, size):
+	img = cv2.imread(img_path)
+	if img is None:
+		print ('Error opening image!')
+		print ('Usage: copy_make_border.py [image_name -- default ../data/lena.jpg] \n')
+		return -1
+	out = cv2.resize(img, (size,size))
+
+	#cv2.imshow('img',img)
+	#cv2.imshow('padded',pad_out)
+	#cv2.waitKey(0)
+	#cv2.destroyAllWindows()
+
+	return out
+
 
 ''' 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -78,7 +101,48 @@ def scale_pad_files(img_dir, out_dir, size):
 			print(pathjoin(out_dir, filename))
 	return None
 
-size = 256
+''' 
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Scale each image file in img_dir 
+given the desired square size 
+output the scaled image to out_dir
+
+Input: img_dir, out_dir, size
+Output: scaled_images
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+'''
+def scale_files(img_dir, out_dir, size):
+	for img in os.listdir(img_dir):
+		img_name = os.fsdecode(img)
+		if img_name.endswith("_s.png"):
+			img_id = img_name[:-6]
+			sp_out = scale(img_dir + '/' + img_name, size)
+			filename = img_id + '_' + str(size) + '.png'
+			cv2.imwrite(pathjoin(out_dir, filename) ,sp_out)
+			print(pathjoin(out_dir, filename))
+	return None
+
+def scale_class_files(img_dir, out_dir, size, class_size):
+	class_id = 0
+	count = 0
+	for img in os.listdir(img_dir):
+		img_name = os.fsdecode(img)
+		if img_name.endswith(".jpg"):
+			count += 1
+			if count > class_size:
+				class_id += 1
+				count = 0
+			sp_out = scale_pad(img_dir + '/' + img_name, size)
+			filename = str(class_id) + '_' + str(count) + '.jpg'
+			cv2.imwrite(pathjoin(out_dir, filename) ,sp_out)
+			print(pathjoin(out_dir, filename))
+	return None
+
+
+
+size = 180
 #img_path = IMG_DIR + '/0010002_s.png'
 #scale_pad(img_path, size)
-scale_pad_files(IMG_DIR, OUT_DIR, size)
+
+#scale_pad_files(IMG_DIR, OUT_DIR, size)
+scale_files(IMG_DIR, OUT_DIR, size)

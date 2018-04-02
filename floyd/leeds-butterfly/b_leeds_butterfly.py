@@ -4,9 +4,9 @@ b_leeds_butterfly.py
 
 Run:
 floyd run \
---data jengtallis/datasets/leeds-butterfly-256/1:/data \
+--cpu2 \
+--data jengtallis/datasets/scale-leeds-butterfly-128/1:/data \
 "python b_leeds_butterfly.py"
-
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 '''
@@ -52,13 +52,13 @@ IMG_DIR = '/data'
 
 # Output File Path
 LOG_DIR = '/output/tb_log/'
-weight_dir = '/output/hi_weights/'
-model_dir = '/output/hi_models/'
+output_dir = '/output/'
 train_id = '1'
 model_name = 'model_hi_leedsbutterfly_' + train_id + '.json'
 weight_name = 'weights_hi_leedsbutterfly_' + train_id + '.h5'
-MODEL_FILE = os.path.join(model_dir, model_name)
-WEIGHT_fILE = os.path.join(weight_dir, weight_name)
+MODEL_FILE = os.path.join(output_dir, model_name)
+WEIGHT_FILE = os.path.join(output_dir, weight_name)
+historyfile = '/output/hi_butterfly_his_'+ train_id + '.txt'
 
 # === Input/Output data ===
 def data(img_dir, test_size):
@@ -94,9 +94,8 @@ def data(img_dir, test_size):
 # ================= Model Parameters  ===================
 '''
 batch_size	= 128
-epochs		= 60
-
-test_size	= 0.3
+epochs		= 120
+test_size	= 0.2
 
 '''
 #################################################################
@@ -124,7 +123,7 @@ def load_model(jsonfile, hdf5file, X, Y):
 	model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 	# evaluate the model
 	print("Evaluation Result:")
-	scores = model.evaluate(X, Y, verbose=0)
+	scores = model.evaluate(X, Y, verbose=1)
 	print('Test loss:', scores[0])
 	print('Test accuracy:', scores[1])
 	print("\n%s: %.5f%%" % (model.metrics_names[1], scores[1]*100))
@@ -136,12 +135,12 @@ def load_model(jsonfile, hdf5file, X, Y):
 ########################################################
 # ==================== CNN Trainer  ====================
 '''
-def trainer(batch_size, epochs, test_size, IMG_DIR, LOG_DIR, MODEL_FILE, WEIGHT_fILE):
+def trainer(batch_size, epochs, test_size, IMG_DIR, LOG_DIR, MODEL_FILE, WEIGHT_FILE):
 
 	# ==================== Data  ====================
 
 	# ==================== data definition =====================
-	size = 256
+	size = 128
 	input_shape = (size, size, 3)
 	# === fine-grained classes ===
 	n_fg = 10
@@ -176,6 +175,8 @@ def trainer(batch_size, epochs, test_size, IMG_DIR, LOG_DIR, MODEL_FILE, WEIGHT_
 	x = BatchNormalization()(x)
 	x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv2')(x)
 	x = BatchNormalization()(x)
+	x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv3')(x)
+	x = BatchNormalization()(x)
 	x = MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool')(x)
 
 	# ==================== Block 4  ====================
@@ -183,17 +184,19 @@ def trainer(batch_size, epochs, test_size, IMG_DIR, LOG_DIR, MODEL_FILE, WEIGHT_
 	x = BatchNormalization()(x)
 	x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv2')(x)
 	x = BatchNormalization()(x)
+	x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv3')(x)
+	x = BatchNormalization()(x)
 	x = MaxPooling2D((2, 2), strides=(2, 2), name='block4_pool')(x)
 
 	# ==================== Fine-Grained Block  ====================
 	x = Flatten(name='flatten')(x)
-	x = Dense(1024, activation='relu', name='fc_leedsbutterfly_1')(x)
+	x = Dense(4096, activation='relu', name='fc1')(x)
 	x = BatchNormalization()(x)
 	x = Dropout(0.5)(x)
-	x = Dense(1024, activation='relu', name='fc2')(x)
+	x = Dense(4096, activation='relu', name='fc2')(x)
 	x = BatchNormalization()(x)
 	x = Dropout(0.5)(x)
-	fg_pred = Dense(n_fg, activation='softmax', name='pred_leedsbutterfly')(x)
+	fg_pred = Dense(n_fg, activation='softmax', name='pred')(x)
 
 	model = Model(input_imgs, fg_pred, name='b_leeds_butterfly')
 
@@ -226,32 +229,32 @@ def trainer(batch_size, epochs, test_size, IMG_DIR, LOG_DIR, MODEL_FILE, WEIGHT_
 
 	# evaluate the model
 	print("Evaluation Result:")
-	scores = model.evaluate(X_test, Y_test, verbose=0)
+	scores = model.evaluate(X_test, Y_test, verbose=1)
+	print(scores)
 	print('Test loss:', scores[0])
 	print('Test accuracy:', scores[1])
 	print("\n%s: %.5f%%" % (model.metrics_names[1], scores[1]*100))
 
 	# ==================== Plot result  ====================
-	accuracy = train.history['acc']
-	val_accuracy = train.history['val_acc']
-	loss = train.history['loss']
-	val_loss = train.history['val_loss']
-	epochs = range(len(accuracy))
-	plt.plot(epochs, accuracy, 'bo', label='Training accuracy')
-	plt.plot(epochs, val_accuracy, 'b', label='Validation accuracy')
-	plt.title('Training and validation accuracy')
-	plt.legend()
-	plt.figure()
-	plt.plot(epochs, loss, 'bo', label='Training loss')
-	plt.plot(epochs, val_loss, 'b', label='Validation loss')
-	plt.title('Training and validation loss')
-	plt.legend()
-	plt.show()
+	print(str(train.history))
+	#plt.plot(epochs, accuracy, 'bo', label='Training accuracy')
+	#plt.plot(epochs, val_accuracy, 'b', label='Validation accuracy')
+	#plt.title('Training and validation accuracy')
+	#plt.legend()
+	#plt.figure()
+	#plt.plot(epochs, loss, 'bo', label='Training loss')
+	#plt.plot(epochs, val_loss, 'b', label='Validation loss')
+	#plt.title('Training and validation loss')
+	#plt.legend()
+	#plt.show()
+
+	with open(historyfile, "w") as his_file:
+		his_file.write(str(train.history))
 
 	# ==================== Save CNN Model  ====================
 
-	jsonfile = MODEL_fILE
-	hdf5file = WEIGHT_fILE
+	jsonfile = MODEL_FILE
+	hdf5file = WEIGHT_FILE
 
 	# serialize model to JSON
 	model_json = model.to_json()
@@ -265,4 +268,4 @@ def trainer(batch_size, epochs, test_size, IMG_DIR, LOG_DIR, MODEL_FILE, WEIGHT_
 
 
 ########## trainer trains model #########
-trainer(batch_size, epochs, test_size, IMG_DIR, LOG_DIR, MODEL_FILE, WEIGHT_fILE)
+trainer(batch_size, epochs, test_size, IMG_DIR, LOG_DIR, MODEL_FILE, WEIGHT_FILE)

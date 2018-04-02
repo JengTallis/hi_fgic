@@ -4,7 +4,8 @@ hi_leeds_butterfly.py
 
 Run:
 floyd run \
---data jengtallis/datasets/leeds-butterfly-256/1:/data \
+--cpu2 \
+--data jengtallis/datasets/scale-leeds-butterfly-128/1:/data \
 "python hi_leeds_butterfly.py"
 
 
@@ -65,6 +66,68 @@ class LossWeightsModifier(keras.callbacks.Callback):
       be.set_value(self.beta, 0)
       be.set_value(self.gamma, 1)
 
+class LossWeightsModifier2(keras.callbacks.Callback):
+  def __init__(self, alpha, beta, gamma):
+    self.alpha = alpha
+    self.beta = beta
+    self.gamma = gamma
+  def on_epoch_end(self, epoch, logs={}):
+    if epoch == 8:
+      be.set_value(self.alpha, 0.1)
+      be.set_value(self.beta, 0.8)
+      be.set_value(self.gamma, 0.1)
+    if epoch == 18:
+      be.set_value(self.alpha, 0.1)
+      be.set_value(self.beta, 0.2)
+      be.set_value(self.gamma, 0.7)
+    if epoch == 28:
+      be.set_value(self.alpha, 0)
+      be.set_value(self.beta, 0)
+      be.set_value(self.gamma, 1)
+    if epoch == 58:
+      be.set_value(self.alpha, 0.98)
+      be.set_value(self.beta, 0.01)
+      be.set_value(self.gamma, 0.01)
+    if epoch == 68:
+      be.set_value(self.alpha, 0.1)
+      be.set_value(self.beta, 0.8)
+      be.set_value(self.gamma, 0.1)
+    if epoch == 78:
+      be.set_value(self.alpha, 0)
+      be.set_value(self.beta, 0)
+      be.set_value(self.gamma, 1)
+
+class LossWeightsModifier3(keras.callbacks.Callback):
+  def __init__(self, alpha, beta, gamma):
+    self.alpha = alpha
+    self.beta = beta
+    self.gamma = gamma
+  def on_epoch_end(self, epoch, logs={}):
+    if epoch == 8:
+      be.set_value(self.alpha, 0.1)
+      be.set_value(self.beta, 0.8)
+      be.set_value(self.gamma, 0.1)
+    if epoch == 18:
+      be.set_value(self.alpha, 0.1)
+      be.set_value(self.beta, 0.2)
+      be.set_value(self.gamma, 0.7)
+    if epoch == 28:
+      be.set_value(self.alpha, 0)
+      be.set_value(self.beta, 0)
+      be.set_value(self.gamma, 1)
+    if epoch == 68:
+      be.set_value(self.alpha, 0.98)
+      be.set_value(self.beta, 0.01)
+      be.set_value(self.gamma, 0.01)
+    if epoch == 78:
+      be.set_value(self.alpha, 0.1)
+      be.set_value(self.beta, 0.8)
+      be.set_value(self.gamma, 0.1)
+    if epoch == 88:
+      be.set_value(self.alpha, 0)
+      be.set_value(self.beta, 0)
+      be.set_value(self.gamma, 1)   
+
 '''
 ########################################################
 # ================== Data Directory  ===================
@@ -75,13 +138,13 @@ IMG_DIR = '/data'
 
 # Output File Path
 LOG_DIR = '/output/tb_log/'
-weight_dir = '/output/hi_weights/'
-model_dir = '/output/hi_models/'
+output_dir = '/output/'
 train_id = '1'
 model_name = 'model_hi_leedsbutterfly_' + train_id + '.json'
 weight_name = 'weights_hi_leedsbutterfly_' + train_id + '.h5'
-MODEL_FILE = os.path.join(model_dir, model_name)
-WEIGHT_fILE = os.path.join(weight_dir, weight_name)
+MODEL_FILE = os.path.join(output_dir, model_name)
+WEIGHT_FILE = os.path.join(output_dir, weight_name)
+historyfile = '/output/hi_butterfly_his_'+ train_id + '.txt'
 
 # === Input/Output data ===
 def data(img_dir, test_size):
@@ -117,7 +180,7 @@ def data(img_dir, test_size):
 # ================= Model Parameters  ===================
 '''
 batch_size	= 128
-epochs		= 60
+epochs		= 120
 
 test_size	= 0.3
 
@@ -147,7 +210,7 @@ def load_model(jsonfile, hdf5file, X, Y):
 	model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 	# evaluate the model
 	print("Evaluation Result:")
-	scores = model.evaluate(X, Y, verbose=0)
+	scores = model.evaluate(X, [Y_c1_test, Y_c2_test, Y_test], verbose=0)
 	print('Test loss:', scores[0])
 	print('Test accuracy:', scores[1])
 	print("\n%s: %.5f%%" % (model.metrics_names[1], scores[1]*100))
@@ -159,12 +222,12 @@ def load_model(jsonfile, hdf5file, X, Y):
 ########################################################
 # ==================== CNN Trainer  ====================
 '''
-def trainer(batch_size, epochs, test_size, IMG_DIR, LOG_DIR, MODEL_FILE, WEIGHT_fILE):
+def trainer(batch_size, epochs, test_size, IMG_DIR, LOG_DIR, MODEL_FILE, WEIGHT_FILE):
 
 	# ==================== Data  ====================
 
 	# ==================== data definition =====================
-	size = 256
+	size = 128
 	input_shape = (size, size, 3)
 
 	# === coarse 1 classes ===
@@ -242,47 +305,51 @@ def trainer(batch_size, epochs, test_size, IMG_DIR, LOG_DIR, MODEL_FILE, WEIGHT_
 
 	# ==================== Coarse 1 Branch  ====================
 	c1_bch = Flatten(name='c1_flatten')(x)
-	c1_bch = Dense(256, activation='relu', name='c1_fc_leedsbutterfly_1')(c1_bch)
+	c1_bch = Dense(256, activation='relu', name='c1_fc1')(c1_bch)
 	c1_bch = BatchNormalization()(c1_bch)
 	c1_bch = Dropout(0.5)(c1_bch)
 	c1_bch = Dense(256, activation='relu', name='c1_fc2')(c1_bch)
 	c1_bch = BatchNormalization()(c1_bch)
 	c1_bch = Dropout(0.5)(c1_bch)
-	c1_pred = Dense(n_c1, activation='softmax', name='c1_pred_leedsbutterfly')(c1_bch)
+	c1_pred = Dense(n_c1, activation='softmax', name='c1_pred')(c1_bch)
 
 	# ==================== Block 3  ====================
 	x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv1')(x)
 	x = BatchNormalization()(x)
 	x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv2')(x)
 	x = BatchNormalization()(x)
+	x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv3')(x)
+	x = BatchNormalization()(x)
 	x = MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool')(x)
 
 	# ==================== Coarse 2 Branch  ====================
 	c2_bch = Flatten(name='c2_flatten')(x)
-	c2_bch = Dense(512, activation='relu', name='c2_fc_leedsbutterfly_1')(c2_bch)
+	c2_bch = Dense(512, activation='relu', name='c2_fc1')(c2_bch)
 	c2_bch = BatchNormalization()(c2_bch)
 	c2_bch = Dropout(0.5)(c2_bch)
 	c2_bch = Dense(512, activation='relu', name='c2_fc2')(c2_bch)
 	c2_bch = BatchNormalization()(c2_bch)
 	c2_bch = Dropout(0.5)(c2_bch)
-	c2_pred = Dense(n_c2, activation='softmax', name='c2_pred_leedsbutterfly')(c2_bch)
+	c2_pred = Dense(n_c2, activation='softmax', name='c2_pred')(c2_bch)
 
 	# ==================== Block 4  ====================
 	x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv1')(x)
 	x = BatchNormalization()(x)
 	x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv2')(x)
 	x = BatchNormalization()(x)
+	x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv3')(x)
+	x = BatchNormalization()(x)
 	x = MaxPooling2D((2, 2), strides=(2, 2), name='block4_pool')(x)
 
 	# ==================== Fine-Grained Block  ====================
 	x = Flatten(name='flatten')(x)
-	x = Dense(1024, activation='relu', name='fc_leedsbutterfly_1')(x)
+	x = Dense(4096, activation='relu', name='fc1')(x)
 	x = BatchNormalization()(x)
 	x = Dropout(0.5)(x)
-	x = Dense(1024, activation='relu', name='fc2')(x)
+	x = Dense(4096, activation='relu', name='fc2')(x)
 	x = BatchNormalization()(x)
 	x = Dropout(0.5)(x)
-	fg_pred = Dense(n_fg, activation='softmax', name='pred_leedsbutterfly')(x)
+	fg_pred = Dense(n_fg, activation='softmax', name='fg_pred')(x)
 
 	model = Model(input=input_imgs, output=[c1_pred, c2_pred, fg_pred], name='hi_leeds_butterfly')
 
@@ -296,7 +363,7 @@ def trainer(batch_size, epochs, test_size, IMG_DIR, LOG_DIR, MODEL_FILE, WEIGHT_
 
 	tb_cb = TensorBoard(log_dir=LOG_DIR, histogram_freq=0)
 	change_lr = LearningRateScheduler(scheduler)
-	change_lw = LossWeightsModifier(alpha, beta, gamma)
+	change_lw = LossWeightsModifier3(alpha, beta, gamma)
 	cbks = [change_lr, tb_cb, change_lw]
 
 	model.summary()
@@ -317,32 +384,43 @@ def trainer(batch_size, epochs, test_size, IMG_DIR, LOG_DIR, MODEL_FILE, WEIGHT_
 
 	# evaluate the model
 	print("Evaluation Result:")
-	scores = model.evaluate(X_test, Y_test, verbose=0)
-	print('Test loss:', scores[0])
-	print('Test accuracy:', scores[1])
-	print("\n%s: %.5f%%" % (model.metrics_names[1], scores[1]*100))
+	scores = model.evaluate(X_test, [Y_c1_test, Y_c2_test, Y_test], verbose=1)
+	print(scores)
+	#print('Test loss:', scores[0])
+	#print('Test accuracy:', scores[1])
+	#print("\n%s: %.5f%%" % (model.metrics_names[1], scores[1]*100))
 
 	# ==================== Plot result  ====================
-	accuracy = train.history['acc']
-	val_accuracy = train.history['val_acc']
-	loss = train.history['loss']
-	val_loss = train.history['val_loss']
-	epochs = range(len(accuracy))
-	plt.plot(epochs, accuracy, 'bo', label='Training accuracy')
-	plt.plot(epochs, val_accuracy, 'b', label='Validation accuracy')
-	plt.title('Training and validation accuracy')
-	plt.legend()
-	plt.figure()
-	plt.plot(epochs, loss, 'bo', label='Training loss')
-	plt.plot(epochs, val_loss, 'b', label='Validation loss')
-	plt.title('Training and validation loss')
-	plt.legend()
-	plt.show()
+	print('History:')
+	print((str(train.history)))
+	#accuracy = train.history['acc']
+	#val_accuracy = train.history['val_acc']
+	#loss = train.history['loss']
+	#val_loss = train.history['val_loss']
+	#epochs = range(len(accuracy))
+	
+
+	#plt.plot(epochs, accuracy, 'bo', label='Training accuracy')
+	#plt.plot(epochs, val_accuracy, 'b', label='Validation accuracy')
+	#plt.title('Training and validation accuracy')
+	#plt.legend()
+	#plt.figure()
+	#plt.plot(epochs, loss, 'bo', label='Training loss')
+	#plt.plot(epochs, val_loss, 'b', label='Validation loss')
+	#plt.title('Training and validation loss')
+	#plt.legend()
+	#plt.show()
+
+	
+	with open(historyfile, "w") as his_file:
+		his_file.write(str(train.history))
+	
+
 
 	# ==================== Save CNN Model  ====================
 
-	jsonfile = MODEL_fILE
-	hdf5file = WEIGHT_fILE
+	jsonfile = MODEL_FILE
+	hdf5file = WEIGHT_FILE
 
 	# serialize model to JSON
 	model_json = model.to_json()
@@ -356,4 +434,4 @@ def trainer(batch_size, epochs, test_size, IMG_DIR, LOG_DIR, MODEL_FILE, WEIGHT_
 
 
 ########## trainer trains model #########
-trainer(batch_size, epochs, test_size, IMG_DIR, LOG_DIR, MODEL_FILE, WEIGHT_fILE)
+trainer(batch_size, epochs, test_size, IMG_DIR, LOG_DIR, MODEL_FILE, WEIGHT_FILE)
